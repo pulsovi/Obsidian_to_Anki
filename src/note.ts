@@ -145,8 +145,10 @@ export class Note extends AbstractNote {
 
         Then, return the stripped line, and the field.*/
         for (let field of this.field_names) {
-            if (line.startsWith(field + ":")) {
-                return [line.slice((field + ":").length), field]
+            const fieldRE = new RegExp(`^(?<fieldName>${field}(?: |\u00a0)?:)`, 'u');
+            const fieldName = line.match(fieldRE)?.groups?.fieldName;
+            if (fieldName) {
+                return [line.slice(fieldName.length), field]
             }
         }
         return [line,this.current_field]

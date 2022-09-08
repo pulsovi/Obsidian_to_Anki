@@ -81,7 +81,7 @@ abstract class AbstractFile {
 
     frozen_fields_dict: FROZEN_FIELDS_DICT
     target_deck: string
-    global_tags: string
+    global_tags: string[]
 
     notes_to_add: AnkiConnectNote[]
     id_indexes: number[]
@@ -138,6 +138,7 @@ abstract class AbstractFile {
     setup_global_tags() {
         const result = this.file.match(this.data.TAG_REGEXP)
         console.info('setup_global_tags', {result})
+        this.global_tags = result ? result[1].split(TAG_SEP) : []
     }
 
     getHash(): string {
@@ -238,7 +239,7 @@ abstract class AbstractFile {
         let actions: AnkiConnect.AnkiConnectRequest[] = []
         for (let parsed of this.notes_to_edit) {
             actions.push(
-                AnkiConnect.addTags([parsed.identifier], parsed.note.tags.join(" ") + " " + this.global_tags)
+                AnkiConnect.addTags([parsed.identifier], parsed.note.tags.join(TAG_SEP) + TAG_SEP + this.global_tags.join(TAG_SEP))
             )
         }
         return AnkiConnect.multi(actions)
@@ -314,7 +315,7 @@ export class AllFile extends AbstractFile {
             )
             if (parsed.identifier == null) {
                 // Need to make sure global_tags get added
-                parsed.note.tags.push(...this.global_tags.split(TAG_SEP))
+                parsed.note.tags.push(...this.global_tags)
                 this.notes_to_add.push(parsed.note)
                 this.id_indexes.push(position)
             } else if (!this.data.EXISTING_IDS.includes(parsed.identifier)) {
@@ -353,7 +354,7 @@ export class AllFile extends AbstractFile {
             )
             if (parsed.identifier == null) {
                 // Need to make sure global_tags get added
-                parsed.note.tags.push(...this.global_tags.split(TAG_SEP))
+                parsed.note.tags.push(...this.global_tags)
                 this.inline_notes_to_add.push(parsed.note)
                 this.inline_id_indexes.push(position)
             } else if (!this.data.EXISTING_IDS.includes(parsed.identifier)) {
@@ -410,7 +411,7 @@ export class AllFile extends AbstractFile {
                             this.ignore_spans.pop()
                             continue
                         }
-                        parsed.note.tags.push(...this.global_tags.split(TAG_SEP))
+                        parsed.note.tags.push(...this.global_tags);
                         this.regex_notes_to_add.push(parsed.note)
                         this.regex_id_indexes.push(match.index + match[0].length)
                     }

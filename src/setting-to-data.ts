@@ -21,9 +21,10 @@ export async function settingToData(app: App, settings: PluginSettings, fields_d
         fields: {},
         options: {
             allowDuplicate: false,
+            allowFrontEmpty: true,
             duplicateScope: "deck"
         },
-        tags: [settings.Defaults.Tag]
+        tags: settings.Defaults.Tag ? [settings.Defaults.Tag] : []
     }
     result.EXISTING_IDS = await AnkiConnect.invoke('findNotes', {query: ""}) as number[]
 
