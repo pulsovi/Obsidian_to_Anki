@@ -63,10 +63,12 @@ function contained_in(span: [number, number], spans: Array<[number, number]>): b
 function* findignore(pattern: RegExp, text: string, ignore_spans: Array<[number, number]>): IterableIterator<RegExpMatchArray> {
 	let matches = text.matchAll(pattern)
 	for (let match of matches) {
+        console.info('findignore match', match)
 		if (!(contained_in([match.index, match.index + match[0].length], ignore_spans))) {
 			yield match
 		}
 	}
+    console.info('findignore: no more match')
 }
 
 abstract class AbstractFile {
@@ -135,7 +137,7 @@ abstract class AbstractFile {
 
     setup_global_tags() {
         const result = this.file.match(this.data.TAG_REGEXP)
-        this.global_tags = result ? result[1] : ""
+        console.info('setup_global_tags', {result})
     }
 
     getHash(): string {
@@ -202,6 +204,7 @@ abstract class AbstractFile {
     getUpdateFields(): AnkiConnect.AnkiConnectRequest {
         let actions: AnkiConnect.AnkiConnectRequest[] = []
         for (let parsed of this.notes_to_edit) {
+            console.info('getUpdateFields:edit_note', parsed)
             actions.push(
                 AnkiConnect.updateNoteFields(
                     parsed.identifier, parsed.note.fields
@@ -291,7 +294,9 @@ export class AllFile extends AbstractFile {
     }
 
     scanNotes() {
+        console.info('scanNotes', { regex: this.data.NOTE_REGEXP });
         for (let note_match of this.file.matchAll(this.data.NOTE_REGEXP)) {
+            console.info('note match', note_match);
             let [note, position]: [string, number] = [note_match[1], note_match.index + note_match[0].indexOf(note_match[1]) + note_match[1].length]
             // That second thing essentially gets the index of the end of the first capture group.
             let parsed = new Note(
@@ -323,6 +328,7 @@ export class AllFile extends AbstractFile {
                     console.warn("Note with id", parsed.identifier, " in file ", this.path, " does not exist in Anki!")
                 }
             } else {
+                // global_tags will be added by the getAddTags function
                 this.notes_to_edit.push(parsed)
             }
         }
@@ -357,6 +363,7 @@ export class AllFile extends AbstractFile {
                 }
                 console.warn("Note with id", parsed.identifier, " in file ", this.path, " does not exist in Anki!")
             } else {
+                // global_tags will be added by the getAddTags function
                 this.notes_to_edit.push(parsed)
             }
         }
@@ -371,6 +378,7 @@ export class AllFile extends AbstractFile {
                 let id_str = search_id ? ID_REGEXP_STR : ""
                 let tag_str = search_tags ? TAG_REGEXP_STR : ""
                 let regexp: RegExp = new RegExp(regexp_str + tag_str + id_str, 'gm')
+                console.info(`search (regex notes) for ${note_type}`, { regexp_str, regexp });
                 for (let match of findignore(regexp, this.file, this.ignore_spans)) {
                     this.ignore_spans.push([match.index, match.index + match[0].length])
                     const parsed: AnkiConnectNoteAndID = new RegexNote(
@@ -392,6 +400,8 @@ export class AllFile extends AbstractFile {
                             }
                             console.warn("Note with id", parsed.identifier, " in file ", this.path, " does not exist in Anki!")
                         } else {
+                            // global_tags will be added by the getAddTags function
+                            console.info('found note to edit', parsed);
                             this.notes_to_edit.push(parsed)
                         }
                     } else {
