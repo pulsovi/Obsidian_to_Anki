@@ -21,6 +21,7 @@ export async function settingToData(app: App, settings: PluginSettings, fields_d
         fields: {},
         options: {
             allowDuplicate: false,
+            allowFrontEmpty: true,
             duplicateScope: "deck"
         },
         tags: settings.Defaults.Tag ? [settings.Defaults.Tag] : []

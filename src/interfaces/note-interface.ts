@@ -4,6 +4,7 @@ export interface AnkiConnectNote {
 	fields: Record<string, string>,
 	options: {
 		allowDuplicate: boolean,
+		allowFrontEmpty: boolean,
 		duplicateScope: string
 	}
 	tags: Array<string>,
