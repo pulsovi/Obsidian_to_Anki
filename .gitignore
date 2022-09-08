@@ -246,3 +246,6 @@ dist
 
 # SublimeText files
 *.sublime-workspace
+
+# Compiled files
+/main.js
