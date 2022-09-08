@@ -15,6 +15,7 @@ export function invoke(action: string, params={}) {
         xhr.addEventListener('load', () => {
             try {
                 const response = JSON.parse(xhr.responseText);
+                console.info('AnkiConnect response', { action, params, response });
                 if (Object.getOwnPropertyNames(response).length != 2) {
                     throw 'response has an unexpected number of fields';
                 }
@@ -29,6 +30,7 @@ export function invoke(action: string, params={}) {
                 }
                 resolve(response.result);
             } catch (e) {
+            	console.info('AnkiConnect error', e);
                 reject(e);
             }
         });
