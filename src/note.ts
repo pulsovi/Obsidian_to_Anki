@@ -135,7 +135,7 @@ export class Note extends AbstractNote {
     }
 
     getNoteType(): string {
-        return this.split_text[0]
+        return this.split_text[0].replace(/  $/u, '');
     }
 
     fieldFromLine(line: string): [string, string] {
