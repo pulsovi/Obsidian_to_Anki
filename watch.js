@@ -10,7 +10,7 @@ const watcher = fs.watch('./main.js', { persistent: true }, (event, filename) =>
 function handleEvent (event, filename) {
   console.log(event, filename);
   const src = path.resolve('./main.js');
-  const dest = String.raw`E:\SyncThing\Obsidian\David Gabison\.obsidian\plugins\obsidian-to-anki-plugin\main.js`;
+  const dest = String.raw`E:\SyncThing\Obsidian\Vaults\David Gabison\.obsidian\plugins\obsidian-to-anki-plugin\main.js`;
   console.log('copy file', src, 'to', dest);
   fs.copyFile(src, dest, (err) => {console.log(err)});
 }
