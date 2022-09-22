@@ -8,10 +8,10 @@ import { AnkiConnectNote, AnkiConnectNoteAndID } from './interfaces/note-interfa
 import { FIELDS_DICT, FROZEN_FIELDS_DICT } from './interfaces/field-interface'
 import { FileData } from './interfaces/settings-interface'
 
-const TAG_PREFIX:string = "Tags: "
+const TAG_PREFIX:string[] = ["Tags: ", "Tags : "]
 export const TAG_SEP:string = " "
 export const ID_REGEXP_STR: string = String.raw`\n?(?:<!--)?(?:ID: (\d+).*)`
-export const TAG_REGEXP_STR: string = String.raw`(Tags: .*)`
+export const TAG_REGEXP_STR: string = String.raw`(Tags ?: .*)`
 const OBS_TAG_REGEXP: RegExp = /#(\w+)/g
 
 const ANKI_CLOZE_REGEXP: RegExp = /{{c\d+::[\s\S]+?}}/
@@ -129,11 +129,12 @@ export class Note extends AbstractNote {
     }
 
     getTags(): string[] {
-        if (this.split_text[this.split_text.length-1].startsWith(TAG_PREFIX)) {
-            return this.split_text.pop().slice(TAG_PREFIX.length).split(TAG_SEP)
-        } else {
-            return []
+        for (const prefix of TAG_PREFIX) {
+            if (this.split_text[this.split_text.length-1].startsWith(prefix)) {
+                return this.split_text.pop().slice(prefix.length).split(TAG_SEP)
+            }
         }
+        return []
     }
 
     getNoteType(): string {
@@ -266,12 +267,11 @@ export class RegexNote {
 		this.match = match
 		this.note_type = note_type
 		this.identifier = id ? parseInt(this.match.pop()) : null
-		this.tags = tags ? this.match.pop().slice(TAG_PREFIX.length).split(TAG_SEP) : []
+		this.tags = tags ? this.getTags(this.match.pop()) : []
         if (tags) console.info('found tags :', {
             tagsMatch: this.match.slice(-1)[0],
             TAG_PREFIX,
             TAG_SEP,
-            parsedTags: this.match.slice(-1)[0].slice(TAG_PREFIX.length).split(TAG_SEP),
             match,
             tags: this.tags,
         })
@@ -298,6 +298,11 @@ export class RegexNote {
         }
         return fields
 	}
+
+    getTags (match: string): string[] {
+        const prefix = TAG_PREFIX.find(prefixItem => match.startsWith(prefixItem));
+        return match.slice(prefix.length).split(TAG_SEP)
+    }
 
 	parse(deck: string, url: string = "", frozen_fields_dict: FROZEN_FIELDS_DICT, data: FileData, context: string): AnkiConnectNoteAndID {
 		console.info('RegexNote.parse', { deck, url, frozen_fields_dict, data, context });
