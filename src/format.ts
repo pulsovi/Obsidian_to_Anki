@@ -1,10 +1,23 @@
 import { AnkiConnectNote } from './interfaces/note-interface'
 import { basename, extname } from 'path'
 import { Converter } from 'showdown'
-import { CachedMetadata } from 'obsidian'
+import type { CachedMetadata } from 'obsidian'
 import * as c from './constants'
 
 import showdownHighlight from 'showdown-highlight'
+
+interface Link {
+	/** The original text of the link */
+	original: string
+	/** The target string in the parsed link */
+	target: string;
+	/** The anchor string in the parsed link */
+	anchor: string;
+	/** The alias string in the parsed link */
+	alias?: string;
+	/** The title string in the parsed link */
+	title?: string;
+}
 
 const ANKI_MATH_REGEXP:RegExp = /(\\\[[\s\S]*?\\\])|(\\\([\s\S]*?\\\))/g
 const HIGHLIGHT_REGEXP:RegExp = /==(.*?)==/g
@@ -43,19 +56,22 @@ function escapeHtml(unsafe: string): string {
 
 /** Convert Markdown to HTML */
 export class FormatConverter {
+	file_path: string
 	file_cache: CachedMetadata
 	vault_name: string
 	detectedMedia: Set<string>
 
-	constructor(file_cache: CachedMetadata, vault_name: string) {
+	constructor(file_cache: CachedMetadata, file_path: string, vault_name: string) {
 		this.vault_name = vault_name
 		this.file_cache = file_cache
+		this.file_path = file_path
 		this.detectedMedia = new Set()
 	}
 
-	getUrlFromLink(link: string): string {
-        return "obsidian://open?vault=" + encodeURIComponent(this.vault_name) + String.raw`&file=` + encodeURIComponent(link)
-    }
+	getUrlFromLink(link: string, anchor?: string): string {
+		const file = link || this.file_path
+		return "obsidian://open?vault=" + encodeURIComponent(this.vault_name) + String.raw`&file=` + encodeURIComponent(`${file}${anchor ? '#' : ''}${anchor}`)
+	}
 
 	format_note_with_url(note: AnkiConnectNote, url: string, field: string): void {
 		note.fields[field] += '<br><a href="' + url + '" class="obsidian-link">Obsidian</a>'
@@ -119,10 +135,31 @@ export class FormatConverter {
 		if (!(this.file_cache.hasOwnProperty("links"))) {
 			return note_text
 		}
-		for (let link of this.file_cache.links) {
-			note_text = note_text.replace(new RegExp(c.escapeRegex(link.original), "g"), '<a href="' + this.getUrlFromLink(link.link) + '">' + link.displayText + "</a>")
+		for (let cacheLink of this.file_cache.links) {
+			const link = this.parseLink(cacheLink.original)
+			const { original, target, anchor } = link
+			const displayText = this.getLinkDisplayText(link)
+			note_text = note_text.replace(new RegExp(c.escapeRegex(original), "g"), '<a href="' + this.getUrlFromLink(target, anchor) + '">' + displayText + "</a>")
 		}
 		return note_text
+	}
+
+	parseLink(original: string): Link {
+		const linkRe = {
+			wikilink: /^\[\[(?<target>[^[|#]*)(?:#(?<anchor>[^[|]*))?(?:\|(?<alias>[^\]]*))?\]\]$/u,
+			mdlinkbr: /^\[(?<alias>(?:[^\]\\]|\\\]|\\[^\]])*)\]\(<(?<target>[^#>"]*)(?:#(?<anchor>[^>"]*))?(?: "(?<title>[^>]*)")?>\)$/u,
+			mdlinkns: /^\[(?<alias>(?:[^\]\\]|\\\]|\\[^\]])*)\]\((?<target>[^ #\)]*)(?:#(?<anchor>[^\) ]*))?(?: "(?<title>[^>]*)")?\)$/u,
+		}
+		for (let re of Object.values(linkRe)) {
+			const match = original.match(re)
+			if (match) return { original, ...match.groups } as Link
+		}
+		throw new Error('Cannot parse this link: ' + original)
+	}
+
+	getLinkDisplayText (link: Link) {
+		if (link.alias) return link.alias
+		return `${link.target}${link.target && link.anchor ? ' > ' : ''}${link.anchor}`
 	}
 
 	censor(note_text: string, regexp: RegExp, mask: string): [string, string[]] {
