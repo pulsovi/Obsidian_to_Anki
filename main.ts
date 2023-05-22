@@ -156,16 +156,18 @@ export default class MyPlugin extends Plugin {
 	}
 
 	async scanVault() {
-		new Notice('Scanning vault, check console for details...');
+		let notice = new Notice('Scanning vault, check console for details...', 0);
 		console.info("Checking connection to Anki...")
 		try {
 			await AnkiConnect.invoke('modelNames')
 		}
 		catch(e) {
+			notice.hide()
 			new Notice("Error, couldn't connect to Anki! Check console for error message.")
 			return
 		}
-		new Notice("Successfully connected to Anki! This could take a few minutes - please don't close Anki until the plugin is finished")
+		notice.hide()
+		notice = new Notice("Successfully connected to Anki! This could take a few minutes - please don't close Anki until the plugin is finished", 0)
 		const data: ParsedSettings = await settingToData(this.app, this.settings, this.fields_dict)
 		const manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media)
 		await manager.initialiseFiles()
@@ -175,8 +177,10 @@ export default class MyPlugin extends Plugin {
 		for (let key in hashes) {
 			this.file_hashes[key] = hashes[key]
 		}
-		new Notice("All done! Saving file hashes and added media now...")
+		notice.hide()
+		notice = new Notice("All done! Saving file hashes and added media now...", 0)
 		await this.saveAllData()
+		notice.hide()
 		new Notice("End of scan")
 	}
 
