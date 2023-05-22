@@ -41,8 +41,8 @@ function escapeHtml(unsafe: string): string {
          .replace(/'/g, "&#039;");
  }
 
+/** Convert Markdown to HTML */
 export class FormatConverter {
-
 	file_cache: CachedMetadata
 	vault_name: string
 	detectedMedia: Set<string>
@@ -144,6 +144,7 @@ export class FormatConverter {
 	}
 
 	format(note_text: string, cloze: boolean, highlights_to_cloze: boolean): string {
+		console.info('formatter.format', { note_text, cloze, highlights_to_cloze });
 		note_text = this.obsidian_to_anki_math(note_text)
 		//Extract the parts that are anki math
 		let math_matches: string[]
@@ -176,8 +177,4 @@ export class FormatConverter {
 		}
 		return note_text
 	}
-
-
-
-
 }

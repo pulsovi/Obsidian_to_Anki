@@ -111,7 +111,6 @@ abstract class AbstractNote {
         console.info({template});
         return {note: template, identifier: this.identifier}
     }
-
 }
 
 export class Note extends AbstractNote {
@@ -155,6 +154,10 @@ export class Note extends AbstractNote {
         return [line,this.current_field]
     }
 
+    /**
+     * Parse and format found note fields
+     * return Record of `{ [fieldName]: "HTML field value" }` form
+     */
     getFields(): Record<string, string> {
         console.info('getFields');
         let fields: Record<string, string> = {}
@@ -166,6 +169,7 @@ export class Note extends AbstractNote {
             [line, this.current_field] = this.fieldFromLine(line)
             fields[this.current_field] += line + "\n"
         }
+        console.info(this.constructor.name + '.getFields', JSON.parse(JSON.stringify({ fields })));
         for (let key in fields) {
             fields[key] = this.formatter.format(
                 fields[key].trim(),
@@ -173,10 +177,9 @@ export class Note extends AbstractNote {
 				this.highlights_to_cloze
             ).trim()
         }
-        console.info(this.constructor.name + 'getFields', { fields });
+        console.info(this.constructor.name + '.getFields parsed', { fields });
         return fields
     }
-
 }
 
 export class InlineNote extends AbstractNote {
@@ -238,17 +241,17 @@ export class InlineNote extends AbstractNote {
         }
         return fields
     }
-
-
 }
 
 export class RegexNote {
-
+    /** The match result of this regex against the note text */
 	match: RegExpMatchArray
 	note_type: string
 	groups: Array<string>
 	identifier: number | null
 	tags: string[]
+
+    /** List of the field names for this note model */
     field_names: string[]
 	curly_cloze: boolean
 	highlights_to_cloze: boolean
@@ -281,6 +284,7 @@ export class RegexNote {
 		this.highlights_to_cloze = highlights_to_cloze
 	}
 
+    /** Parse and format the note fields values */
 	getFields(): Record<string, string> {
 		let fields: Record<string, string> = {}
         for (let field of this.field_names) {

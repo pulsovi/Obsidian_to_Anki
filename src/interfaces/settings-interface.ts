@@ -30,8 +30,8 @@ export interface PluginSettings {
 	}
 }
 
+/** All the data that a file would need */
 export interface FileData {
-	//All the data that a file would need.
 	fields_dict: FIELDS_DICT
 	custom_regexps: Record<string, string>
 	file_link_fields: Record<string, string>
@@ -54,6 +54,7 @@ export interface FileData {
 	add_obs_tags: boolean
 }
 
+/** All the data that a file would need */
 export interface ParsedSettings extends FileData {
     add_file_link: boolean
 	folder_decks: Record<string, string>

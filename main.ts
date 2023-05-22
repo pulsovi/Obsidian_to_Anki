@@ -176,7 +176,8 @@ export default class MyPlugin extends Plugin {
 			this.file_hashes[key] = hashes[key]
 		}
 		new Notice("All done! Saving file hashes and added media now...")
-		this.saveAllData()
+		await this.saveAllData()
+		new Notice("End of scan")
 	}
 
 	async onload() {

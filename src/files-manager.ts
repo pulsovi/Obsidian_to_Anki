@@ -50,7 +50,7 @@ function difference<T>(setA: Set<T>, setB: Set<T>): Set<T> {
     return _difference
 }
 
-
+/** Manage all files, scan changed files and update Anki data from them */
 export class FileManager {
     app: App
     data: ParsedSettings
@@ -76,7 +76,7 @@ export class FileManager {
     getFolderPathList(file: TFile): TFolder[] {
         let result: TFolder[] = []
         let abstractFile: TAbstractFile = file
-        while (abstractFile.hasOwnProperty('parent')) {
+        while (abstractFile?.hasOwnProperty('parent')) {
             result.push(abstractFile.parent)
             abstractFile = abstractFile.parent
         }
@@ -197,6 +197,7 @@ export class FileManager {
                 const dataFile = this.app.metadataCache.getFirstLinkpathDest(mediaLink, file.path)
                 if (!(dataFile)) {
                     console.warn("Couldn't locate media file ", mediaLink)
+                    console.log(file)
                 }
                 else {
                     // Located successfully, so treat as if we've added the media

@@ -13,6 +13,7 @@ export function invoke(action: string, params={}) {
         const xhr = new XMLHttpRequest()
         xhr.addEventListener('error', () => reject('failed to issue request'));
         xhr.addEventListener('load', () => {
+            console.info('AnkiConnectResponse:', { request: {action, version: 6, params}, response: JSON.parse(xhr.response), xhr });
             try {
                 const response = JSON.parse(xhr.responseText);
                 console.info('AnkiConnect response', { action, params, response });
@@ -37,6 +38,7 @@ export function invoke(action: string, params={}) {
 
         xhr.open('POST', 'http://127.0.0.1:' + ANKI_PORT.toString());
         xhr.send(JSON.stringify({action, version: 6, params}));
+        console.info('AnkiConnectRequest:', {action, version: 6, params});
     });
 }
 

@@ -63,15 +63,15 @@ function contained_in(span: [number, number], spans: Array<[number, number]>): b
 function* findignore(pattern: RegExp, text: string, ignore_spans: Array<[number, number]>): IterableIterator<RegExpMatchArray> {
 	let matches = text.matchAll(pattern)
 	for (let match of matches) {
-        console.info('findignore match', match)
 		if (!(contained_in([match.index, match.index + match[0].length], ignore_spans))) {
 			yield match
 		}
 	}
-    console.info('findignore: no more match')
 }
 
+/** Represents one full file with its contents, path, metadata, etc */
 abstract class AbstractFile {
+    /** file contents */
     file: string
     path: string
     url: string
@@ -247,6 +247,7 @@ abstract class AbstractFile {
 
 }
 
+/** Represent one full file, its path, contents and meta_data */
 export class AllFile extends AbstractFile {
     ignore_spans: [number, number][]
     custom_regexps: Record<string, string>
@@ -379,8 +380,9 @@ export class AllFile extends AbstractFile {
                 let id_str = search_id ? ID_REGEXP_STR : ""
                 let tag_str = search_tags ? TAG_REGEXP_STR : ""
                 let regexp: RegExp = new RegExp(regexp_str + tag_str + id_str, 'gm')
-                console.info(`search (regex notes) for ${note_type}`, { regexp_str, regexp });
+                let matchNb = 0
                 for (let match of findignore(regexp, this.file, this.ignore_spans)) {
+                    matchNb += 1
                     this.ignore_spans.push([match.index, match.index + match[0].length])
                     const parsed: AnkiConnectNoteAndID = new RegexNote(
                         match, note_type, this.data.fields_dict,
@@ -416,6 +418,7 @@ export class AllFile extends AbstractFile {
                         this.regex_id_indexes.push(match.index + match[0].length)
                     }
                 }
+                console.info(`search (regex notes) for ${note_type} in ${this.path}`, { matchNb, regexp, text: this.file });
             }
         }
     }
