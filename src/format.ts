@@ -70,7 +70,8 @@ export class FormatConverter {
 
 	getUrlFromLink(link: string, anchor?: string): string {
 		const file = link || this.file_path
-		return "obsidian://open?vault=" + encodeURIComponent(this.vault_name) + String.raw`&file=` + encodeURIComponent(`${file}${anchor ? '#' : ''}${anchor}`)
+		anchor = anchor ? `#${anchor}` : ''
+		return "obsidian://open?vault=" + encodeURIComponent(this.vault_name) + String.raw`&file=` + encodeURIComponent(`${file}${anchor}`)
 	}
 
 	format_note_with_url(note: AnkiConnectNote, url: string, field: string): void {

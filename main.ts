@@ -7,7 +7,6 @@ import { settingToData } from './src/setting-to-data'
 import { FileManager } from './src/files-manager'
 
 export default class MyPlugin extends Plugin {
-
 	settings: PluginSettings
 	note_types: Array<string>
 	fields_dict: Record<string, string[]>
@@ -156,18 +155,16 @@ export default class MyPlugin extends Plugin {
 	}
 
 	async scanVault() {
-		let notice = new Notice('Scanning vault, check console for details...', 0);
+		new Notice('Scanning vault, check console for details...');
 		console.info("Checking connection to Anki...")
 		try {
 			await AnkiConnect.invoke('modelNames')
 		}
 		catch(e) {
-			notice.hide()
 			new Notice("Error, couldn't connect to Anki! Check console for error message.")
 			return
 		}
-		notice.hide()
-		notice = new Notice("Successfully connected to Anki! This could take a few minutes - please don't close Anki until the plugin is finished", 0)
+		let notice = new Notice("Successfully connected to Anki! This could take a few minutes - please don't close Anki until the plugin is finished", 0)
 		const data: ParsedSettings = await settingToData(this.app, this.settings, this.fields_dict)
 		const manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media)
 		await manager.initialiseFiles()
@@ -178,9 +175,8 @@ export default class MyPlugin extends Plugin {
 			this.file_hashes[key] = hashes[key]
 		}
 		notice.hide()
-		notice = new Notice("All done! Saving file hashes and added media now...", 0)
+		new Notice("All done! Saving file hashes and added media now...")
 		await this.saveAllData()
-		notice.hide()
 		new Notice("End of scan")
 	}
 
