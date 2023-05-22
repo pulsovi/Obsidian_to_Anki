@@ -261,6 +261,22 @@ export class AllFile extends AbstractFile {
         this.custom_regexps = data.custom_regexps
     }
 
+    getAnchorForPosition(position: number): string {
+        const prepend = this.file.slice(0, position)
+        const lines = prepend.split('\n')
+        let anchor = ''
+        let heading = Infinity
+        lines.reverse().forEach(line => {
+            const match = line.match(/^(?<heading>#*) (?<title>.*)$/u)
+            if (!match) return
+            const lineHeading = match.groups.heading.length
+            if (lineHeading >= heading) return
+            heading = lineHeading
+            anchor = `#${match.groups.title}${anchor}`
+        })
+        return `${this.url}${encodeURIComponent(anchor)}`
+    }
+
     add_spans_to_ignore() {
         this.ignore_spans = []
         this.ignore_spans.push(...spans(this.data.FROZEN_REGEXP, this.file))
@@ -309,7 +325,7 @@ export class AllFile extends AbstractFile {
                 this.formatter
             ).parse(
                 this.target_deck,
-                this.url,
+                this.getAnchorForPosition(note_match.index),
                 this.frozen_fields_dict,
                 this.data,
                 this.data.add_context ? this.getContextAtIndex(note_match.index) : ""
@@ -348,7 +364,7 @@ export class AllFile extends AbstractFile {
                 this.formatter
             ).parse(
                 this.target_deck,
-                this.url,
+                this.getAnchorForPosition(note_match.index),
                 this.frozen_fields_dict,
                 this.data,
                 this.data.add_context ? this.getContextAtIndex(note_match.index) : ""
@@ -389,7 +405,7 @@ export class AllFile extends AbstractFile {
                         search_tags, search_id, this.data.curly_cloze, this.data.highlights_to_cloze, this.formatter
                     ).parse(
                         this.target_deck,
-                        this.url,
+                        this.getAnchorForPosition(match.index),
                         this.frozen_fields_dict,
                         this.data,
                         this.data.add_context ? this.getContextAtIndex(match.index) : ""
