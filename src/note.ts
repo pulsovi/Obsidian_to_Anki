@@ -184,7 +184,7 @@ export class Note extends AbstractNote {
 
 export class InlineNote extends AbstractNote {
 
-    static TAG_REGEXP: RegExp = /Tags: (.*)/;
+    static TAG_REGEXP: RegExp = /Tags ?: (.*)/;
     static ID_REGEXP: RegExp = /(?:<!--)?ID: (\d+)/;
     static TYPE_REGEXP: RegExp = /\[(.*?)\]/;
 

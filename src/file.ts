@@ -137,8 +137,8 @@ abstract class AbstractFile {
 
     setup_global_tags() {
         const result = this.file.match(this.data.TAG_REGEXP)
-        console.info('setup_global_tags', {result})
-        this.global_tags = result ? result[1].split(TAG_SEP) : []
+        this.global_tags = result ? result[1].split(TAG_SEP).map(s => s.trim()) : []
+        console.info('setup_global_tags', {result, regex: this.data.TAG_REGEXP, TAG_SEP, tags: this.global_tags })
     }
 
     getHash(): string {
@@ -239,7 +239,7 @@ abstract class AbstractFile {
         let actions: AnkiConnect.AnkiConnectRequest[] = []
         for (let parsed of this.notes_to_edit) {
             actions.push(
-                AnkiConnect.addTags([parsed.identifier], parsed.note.tags.join(TAG_SEP) + TAG_SEP + this.global_tags.join(TAG_SEP))
+                AnkiConnect.addTags([parsed.identifier], [...parsed.note.tags, ...this.global_tags].join(TAG_SEP))
             )
         }
         return AnkiConnect.multi(actions)
