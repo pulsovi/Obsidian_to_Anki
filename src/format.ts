@@ -207,9 +207,7 @@ export class FormatConverter {
 		note_text = converter.makeHtml(note_text)
 		note_text = this.decensor(note_text, MATH_REPLACE, math_matches, true).trim()
 		// Remove unnecessary paragraph tag
-		if (note_text.startsWith(PARA_OPEN) && note_text.endsWith(PARA_CLOSE)) {
-			note_text = note_text.slice(PARA_OPEN.length, -1 * PARA_CLOSE.length)
-		}
+		note_text = note_text.replace(/^<p>([^<]*)<\/p>$/u, '$1');
 		if (add_highlight_css) {
 			note_text = '<link href="' + c.CODE_CSS_URL + '" rel="stylesheet">' + note_text
 		}

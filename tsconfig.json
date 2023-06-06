@@ -2,8 +2,10 @@
     "compilerOptions": {
         "lib": ["esnext", "dom"],
         "downlevelIteration": true,
+        "exactOptionalPropertyTypes": true,
         "target": "esnext",
         "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true
     }
 }
