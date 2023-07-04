@@ -17,3 +17,8 @@ test('format not trim wrapped tags', () => {
   expect(formatter.format('<p>test4<p>test4</p>test4<p>test4</p>test4</p>', false, false))
     .toBe('<p>test4<p>test4</p>test4<p>test4</p>test4</p>');
 });
+
+test('format trim paragraph with other tags inside it', () => {
+  const formatter = new FormatConverter({}, '', '');
+  expect(formatter.format('<p><a href="foo">test1</a></p>', false, false)).toBe('<a href="foo">test1</a>');
+})
