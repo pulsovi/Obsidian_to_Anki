@@ -9,9 +9,13 @@ export interface AnkiConnectRequest {
 }
 
 export function invoke(action: string, params={}) {
+    console.log('sending Anki request', { action, params })
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest()
-        xhr.addEventListener('error', () => reject('failed to issue request'));
+        xhr.addEventListener('error', error => {
+            logAnkiRequest(action, params, { error })
+            reject('failed to issue request')
+        });
         xhr.addEventListener('load', () => {
             try {
                 const response = JSON.parse(xhr.responseText);
