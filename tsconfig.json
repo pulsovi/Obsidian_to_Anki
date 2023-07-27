@@ -1,4 +1,5 @@
 {
+    "includes": ["src/**/*.ts", "tests/**/*.ts"],
     "compilerOptions": {
         "lib": ["esnext", "dom"],
         "downlevelIteration": true,

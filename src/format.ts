@@ -1,10 +1,14 @@
-import { AnkiConnectNote } from './interfaces/note-interface'
 import { basename, extname } from 'path'
-import { Converter } from 'showdown'
-import type { CachedMetadata } from 'obsidian'
-import * as c from './constants'
 
+import { getLinkpath, Notice } from 'obsidian'
+import type { App, CachedMetadata } from 'obsidian'
+import { Converter } from 'showdown'
 import showdownHighlight from 'showdown-highlight'
+
+import * as c from './constants'
+import { AnkiConnectNote } from './interfaces/note-interface'
+import { MdParser } from './md-parser'
+
 
 interface Link {
 	/** The original text of the link */
@@ -56,6 +60,7 @@ function escapeHtml(unsafe: string): string {
 
 /** Convert Markdown to HTML */
 export class FormatConverter {
+	/** The file this formatter is about to parse */
 	file_path: string
 	file_cache: CachedMetadata
 	vault_name: string
@@ -110,19 +115,44 @@ export class FormatConverter {
 		return text
 	}
 
-	getAndFormatMedias(note_text: string): string {
+	async getAndFormatEmbeds(options: {
+		note_text: string
+		cloze: boolean
+		highlights_to_cloze: boolean
+		from_file: string
+		app: App
+	}): Promise<string> {
+		let { note_text } = options
+		const { from_file, app } = options
 		if (!(this.file_cache.hasOwnProperty("embeds"))) {
 			return note_text
 		}
+
 		for (let embed of this.file_cache.embeds) {
 			if (note_text.includes(embed.original)) {
-				this.detectedMedia.add(embed.link)
 				if (AUDIO_EXTS.includes(extname(embed.link))) {
+					this.detectedMedia.add(embed.link)
 					note_text = note_text.replace(new RegExp(c.escapeRegex(embed.original), "g"), "[sound:" + basename(embed.link) + "]")
 				} else if (IMAGE_EXTS.includes(extname(embed.link))) {
+					this.detectedMedia.add(embed.link)
 					note_text = note_text.replace(
 						new RegExp(c.escapeRegex(embed.original), "g"),
 						'<img src="' + basename(embed.link) + '" alt="' + embed.displayText + '">'
+					)
+				} else if (!extname(embed.link) || extname(embed.link) === '.md') {
+					const link = MdParser.parseLink(embed.original)
+					console.log({ link });
+					const target = app.metadataCache.getFirstLinkpathDest(link.target, from_file)
+					const content = new MdParser(await app.vault.read(target)).getPortion(link.anchor)
+
+					const href = this.getUrlFromLink(link.target, link.anchor)
+					const title = encodeURIComponent(link.title ?? '')
+					const link_text = link.alias ?? embed.displayText
+					const quote_text = await this.format({...options, note_text: content, from_file: link.target })
+
+					note_text = note_text.replace(
+						new RegExp(c.escapeRegex(embed.original), "g"),
+						`<blockquote class="embed"><a href="${href}" title="${title}"><h2 class="embed-title">${link_text}</h2></a>${quote_text}</blockquote>`
 					)
 				} else {
 					console.warn("Unsupported extension: ", extname(embed.link))
@@ -181,7 +211,15 @@ export class FormatConverter {
 		return note_text
 	}
 
-	format(note_text: string, cloze: boolean, highlights_to_cloze: boolean): string {
+	async format(options: {
+		note_text: string
+		cloze: boolean
+		highlights_to_cloze: boolean
+		from_file?: string
+		app: App
+	}): Promise<string> {
+		let { note_text } = options
+		const { cloze, highlights_to_cloze, from_file = this.file_path, app } = options
 		console.info('formatter.format', { note_text, cloze, highlights_to_cloze });
 		note_text = this.obsidian_to_anki_math(note_text)
 		//Extract the parts that are anki math
@@ -198,7 +236,7 @@ export class FormatConverter {
 			}
 			note_text = this.curly_to_cloze(note_text)
 		}
-		note_text = this.getAndFormatMedias(note_text)
+		note_text = await this.getAndFormatEmbeds({ ...options, note_text, from_file, app })
 		note_text = this.formatLinks(note_text)
 		//Special for formatting highlights now, but want to avoid any == in code
 		note_text = note_text.replace(HIGHLIGHT_REGEXP, String.raw`<mark>$1</mark>`)

@@ -151,7 +151,7 @@ export class FileManager {
             if (!(this.file_hashes.hasOwnProperty(file.path) && file.getHash() === this.file_hashes[file.path])) {
                 //Indicates it's changed or new
                 console.info("Scanning ", file.path, "as it's changed or new.")
-                file.scanFile()
+                await file.scanFile(this.app)
                 files_changed.push(file)
                 obfiles_changed.push(this.files[i])
             }
