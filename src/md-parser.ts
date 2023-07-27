@@ -18,8 +18,8 @@ export class MdParser {
 
     const start = match.index || 0
     const end = start + match[0].length
-    const { target, anchor, alias, title, embed } = match.groups
-    return { target, anchor, alias, title, start, end, isEmbed: Boolean(embed) }
+    const { target = '', anchor = '', alias = '', title = '', embed } = match.groups
+    return { target, anchor, alias, title, start, end, isEmbed: Boolean(embed), original: rawLink }
   }
 
   public getPortion (ref?: string | undefined): string {

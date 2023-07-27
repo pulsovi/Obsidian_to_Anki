@@ -6,22 +6,9 @@ import { Converter } from 'showdown'
 import showdownHighlight from 'showdown-highlight'
 
 import * as c from './constants'
+import type { Link } from './interfaces/link-interface'
 import { AnkiConnectNote } from './interfaces/note-interface'
 import { MdParser } from './md-parser'
-
-
-interface Link {
-	/** The original text of the link */
-	original: string
-	/** The target string in the parsed link */
-	target: string;
-	/** The anchor string in the parsed link */
-	anchor: string;
-	/** The alias string in the parsed link */
-	alias?: string;
-	/** The title string in the parsed link */
-	title?: string;
-}
 
 const ANKI_MATH_REGEXP:RegExp = /(\\\[[\s\S]*?\\\])|(\\\([\s\S]*?\\\))/g
 const HIGHLIGHT_REGEXP:RegExp = /==(.*?)==/g
@@ -141,13 +128,14 @@ export class FormatConverter {
 					)
 				} else if (!extname(embed.link) || extname(embed.link) === '.md') {
 					const link = MdParser.parseLink(embed.original)
-					console.log({ link });
 					const target = app.metadataCache.getFirstLinkpathDest(link.target, from_file)
-					const content = new MdParser(await app.vault.read(target)).getPortion(link.anchor)
+					const content = target ?
+						new MdParser(await app.vault.read(target)).getPortion(link.anchor) :
+						`<span class="embed-not-found">-- file not found --</span>`
 
 					const href = this.getUrlFromLink(link.target, link.anchor)
-					const title = encodeURIComponent(link.title ?? '')
-					const link_text = link.alias ?? embed.displayText
+					const title = encodeURIComponent(link.title || embed.displayText)
+					const link_text = link.alias || embed.displayText
 					const quote_text = await this.format({...options, note_text: content, from_file: link.target })
 
 					note_text = note_text.replace(
@@ -167,7 +155,7 @@ export class FormatConverter {
 			return note_text
 		}
 		for (let cacheLink of this.file_cache.links) {
-			const link = this.parseLink(cacheLink.original)
+			const link = MdParser.parseLink(cacheLink.original)
 			const { original, target, anchor } = link
 			const displayText = this.getLinkDisplayText(link)
 			note_text = note_text.replace(new RegExp(c.escapeRegex(original), "g"), '<a href="' + this.getUrlFromLink(target, anchor) + '">' + displayText + "</a>")
@@ -175,22 +163,9 @@ export class FormatConverter {
 		return note_text
 	}
 
-	parseLink(original: string): Link {
-		const linkRe = {
-			wikilink: /^\[\[(?<target>[^[|#]*)(?:#(?<anchor>[^[|]*))?(?:\|(?<alias>[^\]]*))?\]\]$/u,
-			mdlinkbr: /^\[(?<alias>(?:[^\]\\]|\\\]|\\[^\]])*)\]\(<(?<target>[^#>"]*)(?:#(?<anchor>[^>"]*))?(?: "(?<title>[^>]*)")?>\)$/u,
-			mdlinkns: /^\[(?<alias>(?:[^\]\\]|\\\]|\\[^\]])*)\]\((?<target>[^ #\)]*)(?:#(?<anchor>[^\) ]*))?(?: "(?<title>[^>]*)")?\)$/u,
-		}
-		for (let re of Object.values(linkRe)) {
-			const match = original.match(re)
-			if (match) return { original, ...match.groups } as Link
-		}
-		throw new Error('Cannot parse this link: ' + original)
-	}
-
 	getLinkDisplayText (link: Link) {
 		if (link.alias) return link.alias
-		return `${link.target}${link.target && link.anchor ? ' > ' : ''}${link.anchor}`
+		return `${link.target}${link.target && link.anchor ? ' > ' : ''}${link.anchor.slice(1).replace(/#/u, ' > ')}`
 	}
 
 	censor(note_text: string, regexp: RegExp, mask: string): [string, string[]] {

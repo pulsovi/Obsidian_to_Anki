@@ -1,22 +1,25 @@
 export interface Link {
   /** The start position of the link text in the text */
-  start: number;
+  start: number
 
   /** The end position of the link text in the text */
-  end: number;
+  end: number
 
   /** The target string in the parsed link */
-  target: string;
+  target: string
 
   /** The anchor string in the parsed link */
-  anchor: string;
+  anchor: string
 
   /** The alias string in the parsed link */
-  alias?: string;
+  alias?: string
 
   /** The title string in the parsed link */
-  title?: string;
+  title?: string
 
   /** Is the link embed link */
   isEmbed: boolean
+
+  /** The full original link string */
+  original: string
 }
