@@ -1,11 +1,11 @@
 /*Performing plugin operations on markdown file contents*/
 
 import { CachedMetadata, HeadingCache } from 'obsidian'
-import type { App } from 'obsidian'
 import { Md5 } from 'ts-md5/dist/md5';
 
 import * as AnkiConnect from './anki'
 import * as c from './constants'
+import { FileManager } from './files-manager'
 import { FormatConverter } from './format'
 import { FROZEN_FIELDS_DICT } from './interfaces/field-interface'
 import { AnkiConnectNote, AnkiConnectNoteAndID } from './interfaces/note-interface'
@@ -107,7 +107,7 @@ abstract class AbstractFile {
         this.formatter = new FormatConverter(file_cache, path, this.data.vault_name)
     }
 
-    async setup_frozen_fields_dict(app: App) {
+    async setup_frozen_fields_dict(file_manager: FileManager) {
         let frozen_fields_dict: FROZEN_FIELDS_DICT = {}
         for (let note_type in this.data.fields_dict) {
             let fields: string[] = this.data.fields_dict[note_type]
@@ -126,7 +126,7 @@ abstract class AbstractFile {
                 this.data.curly_cloze,
                 this.data.highlights_to_cloze,
                 this.formatter
-            ).getFields(app)
+            ).getFields(file_manager)
             frozen_fields_dict[note_type] = parsed_fields
         }
         this.frozen_fields_dict = frozen_fields_dict
@@ -147,7 +147,7 @@ abstract class AbstractFile {
         return Md5.hashStr(this.file) as string
     }
 
-    abstract scanFile(app: App): Promise<void>
+    abstract scanFile(file_manager: FileManager): Promise<void>
 
     scanDeletions() {
         for (let match of this.file.matchAll(this.data.EMPTY_REGEXP)) {
@@ -298,8 +298,8 @@ export class AllFile extends AbstractFile {
         this.ignore_spans.push(...spans(c.OBS_DISPLAY_CODE_REGEXP, this.file))
     }
 
-    async setupScan(app: App) {
-        await this.setup_frozen_fields_dict(app)
+    async setupScan(file_manager: FileManager) {
+        await this.setup_frozen_fields_dict(file_manager)
         this.setup_target_deck()
         this.setup_global_tags()
         this.add_spans_to_ignore()
@@ -313,7 +313,7 @@ export class AllFile extends AbstractFile {
         this.notes_to_delete = []
     }
 
-    async scanNotes(app: App) {
+    async scanNotes(file_manager: FileManager) {
         console.info('scanNotes', { regex: this.data.NOTE_REGEXP });
         for (let note_match of this.file.matchAll(this.data.NOTE_REGEXP)) {
             console.info('note match', note_match);
@@ -331,7 +331,7 @@ export class AllFile extends AbstractFile {
                 this.frozen_fields_dict,
                 this.data,
                 this.data.add_context ? this.getContextAtIndex(note_match.index) : "",
-                app
+                file_manager
             )
             if (parsed.identifier == null) {
                 // Need to make sure global_tags get added
@@ -355,7 +355,7 @@ export class AllFile extends AbstractFile {
         }
     }
 
-    async scanInlineNotes(app: App) {
+    async scanInlineNotes(file_manager: FileManager) {
         for (let note_match of this.file.matchAll(this.data.INLINE_REGEXP)) {
             let [note, position]: [string, number] = [note_match[1], note_match.index + note_match[0].indexOf(note_match[1]) + note_match[1].length]
             // That second thing essentially gets the index of the end of the first capture group.
@@ -371,7 +371,7 @@ export class AllFile extends AbstractFile {
                 this.frozen_fields_dict,
                 this.data,
                 this.data.add_context ? this.getContextAtIndex(note_match.index) : "",
-                app
+                file_manager
             )
             if (parsed.identifier == null) {
                 // Need to make sure global_tags get added
@@ -391,7 +391,7 @@ export class AllFile extends AbstractFile {
         }
     }
 
-    async search(note_type: string, regexp_str: string, app: App) {
+    async search(note_type: string, regexp_str: string, file_manager: FileManager) {
         //Search the file for regex matches
         //ignoring matches inside ignore_spans,
         //and adding any matches to ignore_spans.
@@ -413,7 +413,7 @@ export class AllFile extends AbstractFile {
                         this.frozen_fields_dict,
                         this.data,
                         this.data.add_context ? this.getContextAtIndex(match.index) : "",
-                        app
+                        file_manager
                     )
                     if (search_id) {
                         if (!(this.data.EXISTING_IDS.includes(parsed.identifier))) {
@@ -444,14 +444,14 @@ export class AllFile extends AbstractFile {
         }
     }
 
-    async scanFile(app: App) {
-        await this.setupScan(app)
-        await this.scanNotes(app)
-        await this.scanInlineNotes(app)
+    async scanFile(file_manager: FileManager) {
+        await this.setupScan(file_manager)
+        await this.scanNotes(file_manager)
+        await this.scanInlineNotes(file_manager)
         for (let note_type in this.custom_regexps) {
             const regexp_str: string = this.custom_regexps[note_type]
             if (regexp_str) {
-                await this.search(note_type, regexp_str, app)
+                await this.search(note_type, regexp_str, file_manager)
             }
         }
         this.all_notes_to_add = this.notes_to_add.concat(this.inline_notes_to_add).concat(this.regex_notes_to_add)

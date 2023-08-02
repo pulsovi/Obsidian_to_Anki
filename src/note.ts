@@ -4,9 +4,8 @@
  * Input must be the note text.
  * Does NOT deal with finding the note in the file.
  */
-import type { App } from 'obsidian';
-
 import { FormatConverter } from './format'
+import type { FileManager } from './files-manager'
 import { AnkiConnectNote, AnkiConnectNoteAndID } from './interfaces/note-interface'
 import { FIELDS_DICT, FROZEN_FIELDS_DICT } from './interfaces/field-interface'
 import { FileData } from './interfaces/settings-interface'
@@ -80,16 +79,16 @@ abstract class AbstractNote {
 
     abstract getNoteType(): string
 
-    abstract getFields(app: App): Promise<Record<string, string>>
+    abstract getFields(file_manager: FileManager): Promise<Record<string, string>>
 
-    async parse(deck:string, url:string, frozen_fields_dict: FROZEN_FIELDS_DICT, data: FileData, context:string, app: App): Promise<AnkiConnectNoteAndID> {
+    async parse(deck:string, url:string, frozen_fields_dict: FROZEN_FIELDS_DICT, data: FileData, context:string, file_manager: FileManager): Promise<AnkiConnectNoteAndID> {
         console.info(this.constructor.name + '.parse', { deck, url, frozen_fields_dict, data, context }, this);
         let template = JSON.parse(JSON.stringify(data.template))
 		template["modelName"] = this.note_type
 		if (this.no_note_type) {
 			return {note: template, identifier: NOTE_TYPE_ERROR}
 		}
-        template["fields"] = await this.getFields(app)
+        template["fields"] = await this.getFields(file_manager)
 		const file_link_fields = data.file_link_fields
         if (url) {
             this.formatter.format_note_with_url(template, url, file_link_fields[this.note_type])
@@ -161,7 +160,7 @@ export class Note extends AbstractNote {
      * Parse and format found note fields
      * return Record of `{ [fieldName]: "HTML field value" }` form
      */
-    async getFields(app: App): Promise<Record<string, string>> {
+    async getFields(file_manager: FileManager): Promise<Record<string, string>> {
         console.info('getFields');
         let fields: Record<string, string> = {}
         for (let field of this.field_names) {
@@ -178,8 +177,7 @@ export class Note extends AbstractNote {
                 note_text: fields[key].trim(),
                 cloze: this.note_type.includes("Cloze") && this.curly_cloze,
 				highlights_to_cloze: this.highlights_to_cloze,
-                from_file: this.formatter.file_path,
-                app,
+                file_manager,
             })).trim()
         }
         console.info(this.constructor.name + '.getFields parsed', { fields });
@@ -223,7 +221,7 @@ export class InlineNote extends AbstractNote {
         return result[1]
     }
 
-    async getFields(app: App): Promise<Record<string, string>> {
+    async getFields(file_manager: FileManager): Promise<Record<string, string>> {
         let fields: Record<string, string> = {}
         for (let field of this.field_names) {
             fields[field] = ""
@@ -242,7 +240,7 @@ export class InlineNote extends AbstractNote {
                 note_text: fields[key].trim(),
                 cloze: this.note_type.includes("Cloze") && this.curly_cloze,
 				highlights_to_cloze: this.highlights_to_cloze,
-                app
+                file_manager
             })).trim()
         }
         return fields
@@ -291,7 +289,7 @@ export class RegexNote {
 	}
 
     /** Parse and format the note fields values */
-	async getFields(app: App): Promise<Record<string, string>> {
+	async getFields(file_manager: FileManager): Promise<Record<string, string>> {
 		let fields: Record<string, string> = {}
         for (let field of this.field_names) {
             fields[field] = ""
@@ -304,7 +302,7 @@ export class RegexNote {
                 note_text: fields[key].trim(),
                 cloze: this.note_type.includes("Cloze") && this.curly_cloze,
 				highlights_to_cloze: this.highlights_to_cloze,
-                app
+                file_manager
             })).trim()
         }
         return fields
@@ -315,11 +313,11 @@ export class RegexNote {
         return match.slice(prefix.length).split(TAG_SEP)
     }
 
-	async parse(deck: string, url: string = "", frozen_fields_dict: FROZEN_FIELDS_DICT, data: FileData, context: string, app: App): Promise<AnkiConnectNoteAndID> {
+	async parse(deck: string, url: string = "", frozen_fields_dict: FROZEN_FIELDS_DICT, data: FileData, context: string, file_manager: FileManager): Promise<AnkiConnectNoteAndID> {
 		console.info('RegexNote.parse', { deck, url, frozen_fields_dict, data, context });
 		let template = JSON.parse(JSON.stringify(data.template))
 		template["modelName"] = this.note_type
-		template["fields"] = await this.getFields(app)
+		template["fields"] = await this.getFields(file_manager)
 		const file_link_fields = data.file_link_fields
 		if (url) {
             this.formatter.format_note_with_url(template, url, file_link_fields[this.note_type])

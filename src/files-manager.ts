@@ -69,6 +69,28 @@ export class FileManager {
         this.added_media_set = new Set(added_media)
     }
 
+    async getFile(file: TFile): Promise<AllFile> {
+        const content: string = await this.app.vault.read(file)
+        const cache: CachedMetadata = this.app.metadataCache.getCache(file.path)
+        const file_data = this.dataToFileData(file)
+        return new AllFile(
+            content,
+            file.path,
+            this.data.add_file_link ? this.getUrl(file) : "",
+            file_data,
+            cache
+        )
+    }
+
+    /** get the best match for a linkpath */
+    async getFirstLinkpathDest(linkpath: string, sourcePath: string): Promise<AllFile> {
+        const tfile = this.app.metadataCache.getFirstLinkpathDest(linkpath, sourcePath)
+        if (!tfile) return null
+        const found = this.ownFiles.find(file => file.path === tfile.path)
+        if (found) return found
+        return await this.getFile(tfile)
+    }
+
     getUrl(file: TFile): string {
         return "obsidian://open?vault=" + encodeURIComponent(this.data.vault_name) + String.raw`&file=` + encodeURIComponent(file.path)
     }
@@ -126,18 +148,7 @@ export class FileManager {
 
     async genAllFiles() {
         for (let file of this.files) {
-            const content: string = await this.app.vault.read(file)
-            const cache: CachedMetadata = this.app.metadataCache.getCache(file.path)
-            const file_data = this.dataToFileData(file)
-            this.ownFiles.push(
-                new AllFile(
-                    content,
-                    file.path,
-                    this.data.add_file_link ? this.getUrl(file) : "",
-                    file_data,
-                    cache
-                )
-            )
+            this.ownFiles.push(await this.getFile(file))
         }
     }
 
@@ -151,7 +162,7 @@ export class FileManager {
             if (!(this.file_hashes.hasOwnProperty(file.path) && file.getHash() === this.file_hashes[file.path])) {
                 //Indicates it's changed or new
                 console.info("Scanning ", file.path, "as it's changed or new.")
-                await file.scanFile(this.app)
+                await file.scanFile(this)
                 files_changed.push(file)
                 obfiles_changed.push(this.files[i])
             }
@@ -311,7 +322,4 @@ export class FileManager {
         await AnkiConnect.invoke('multi', {actions: requests})
         console.info("All done!")
     }
-
-
-
 }

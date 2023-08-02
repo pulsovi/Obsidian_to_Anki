@@ -1,11 +1,12 @@
 import { basename, extname } from 'path'
 
 import { getLinkpath, Notice } from 'obsidian'
-import type { App, CachedMetadata } from 'obsidian'
+import type { CachedMetadata } from 'obsidian'
 import { Converter } from 'showdown'
 import showdownHighlight from 'showdown-highlight'
 
 import * as c from './constants'
+import type { FileManager } from './files-manager'
 import type { Link } from './interfaces/link-interface'
 import { AnkiConnectNote } from './interfaces/note-interface'
 import { MdParser } from './md-parser'
@@ -106,11 +107,10 @@ export class FormatConverter {
 		note_text: string
 		cloze: boolean
 		highlights_to_cloze: boolean
-		from_file: string
-		app: App
+		file_manager: FileManager
 	}): Promise<string> {
 		let { note_text } = options
-		const { from_file, app } = options
+		const { file_manager } = options
 		if (!(this.file_cache.hasOwnProperty("embeds"))) {
 			return note_text
 		}
@@ -128,15 +128,15 @@ export class FormatConverter {
 					)
 				} else if (!extname(embed.link) || extname(embed.link) === '.md') {
 					const link = MdParser.parseLink(embed.original)
-					const target = app.metadataCache.getFirstLinkpathDest(link.target, from_file)
-					const content = target ?
-						new MdParser(await app.vault.read(target)).getPortion(link.anchor) :
-						`<span class="embed-not-found">-- file not found --</span>`
+					const target = await file_manager.getFirstLinkpathDest(link.target, this.file_path)
+					const content = target ? new MdParser(target.file).getPortion(link.anchor) : null
 
 					const href = this.getUrlFromLink(link.target, link.anchor)
-					const title = encodeURIComponent(link.title || embed.displayText)
+					const title = (link.title || embed.displayText).replace(/&|"/gu, char => char === '&' ? '&amp;' : '&quot;')
 					const link_text = link.alias || embed.displayText
-					const quote_text = await this.format({...options, note_text: content, from_file: link.target })
+					const quote_text = content ?
+						await target.formatter.format({...options, note_text: content }) :
+						`<span class="embed-not-found">-- file not found --</span>`
 
 					note_text = note_text.replace(
 						new RegExp(c.escapeRegex(embed.original), "g"),
@@ -190,11 +190,10 @@ export class FormatConverter {
 		note_text: string
 		cloze: boolean
 		highlights_to_cloze: boolean
-		from_file?: string
-		app: App
+		file_manager: FileManager
 	}): Promise<string> {
 		let { note_text } = options
-		const { cloze, highlights_to_cloze, from_file = this.file_path, app } = options
+		const { cloze, highlights_to_cloze, file_manager } = options
 		console.info('formatter.format', { note_text, cloze, highlights_to_cloze });
 		note_text = this.obsidian_to_anki_math(note_text)
 		//Extract the parts that are anki math
@@ -211,7 +210,7 @@ export class FormatConverter {
 			}
 			note_text = this.curly_to_cloze(note_text)
 		}
-		note_text = await this.getAndFormatEmbeds({ ...options, note_text, from_file, app })
+		note_text = await this.getAndFormatEmbeds({ ...options, note_text, file_manager })
 		note_text = this.formatLinks(note_text)
 		//Special for formatting highlights now, but want to avoid any == in code
 		note_text = note_text.replace(HIGHLIGHT_REGEXP, String.raw`<mark>$1</mark>`)
