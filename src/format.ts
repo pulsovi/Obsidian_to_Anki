@@ -61,6 +61,11 @@ export class FormatConverter {
 		this.detectedMedia = new Set()
 	}
 
+	/** Escape HTML chars in `text` to make it able to be used in `title` HTML attribute */
+	static the_title_attribute (text: string): string {
+		return text.replace(/&|"|'/gu, char => char === '&' ? '&amp;' : (char === "'" ? '&apos' : '&quot;'))
+	}
+
 	getUrlFromLink(link: string, anchor?: string): string {
 		const file = link || this.file_path
 		anchor = anchor ? `#${anchor}` : ''
@@ -132,7 +137,7 @@ export class FormatConverter {
 					const content = target ? new MdParser(target.file).getPortion(link.anchor) : null
 
 					const href = this.getUrlFromLink(link.target, link.anchor)
-					const title = (link.title || embed.displayText).replace(/&|"/gu, char => char === '&' ? '&amp;' : '&quot;')
+					const title = FormatConverter.the_title_attribute(link.title || embed.displayText)
 					const link_text = link.alias || embed.displayText
 					const quote_text = content ?
 						await target.formatter.format({...options, note_text: content }) :
@@ -158,7 +163,12 @@ export class FormatConverter {
 			const link = MdParser.parseLink(cacheLink.original)
 			const { original, target, anchor } = link
 			const displayText = this.getLinkDisplayText(link)
-			note_text = note_text.replace(new RegExp(c.escapeRegex(original), "g"), '<a href="' + this.getUrlFromLink(target, anchor) + '">' + displayText + "</a>")
+			const href = this.getUrlFromLink(target, anchor)
+			const title = FormatConverter.the_title_attribute(link.title || decodeURIComponent(href))
+			note_text = note_text.replace(
+				new RegExp(c.escapeRegex(original), "g"),
+				`<a href="${href}">${displayText}</a>`
+			)
 		}
 		return note_text
 	}
