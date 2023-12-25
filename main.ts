@@ -6,7 +6,7 @@ import { ANKI_ICON } from './src/constants'
 import { settingToData } from './src/setting-to-data'
 import { FileManager } from './src/files-manager'
 
-export default class MyPlugin extends Plugin {
+export default class ObsidianToAnki extends Plugin {
 	settings: PluginSettings
 	note_types: Array<string>
 	fields_dict: Record<string, string[]>
@@ -165,19 +165,27 @@ export default class MyPlugin extends Plugin {
 			return
 		}
 		let notice = new Notice("Successfully connected to Anki! This could take a few minutes - please don't close Anki until the plugin is finished", 0)
-		const data: ParsedSettings = await settingToData(this.app, this.settings, this.fields_dict)
-		const manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media)
-		await manager.initialiseFiles()
-		await manager.requests_1()
-		this.added_media = Array.from(manager.added_media_set)
-		const hashes = manager.getHashes()
-		for (let key in hashes) {
-			this.file_hashes[key] = hashes[key]
+		try {
+			const data: ParsedSettings = await settingToData(this.app, this.settings, this.fields_dict)
+			const manager = new FileManager(this.app, data, this.app.vault.getMarkdownFiles(), this.file_hashes, this.added_media)
+			await manager.initialiseFiles()
+			await manager.requests_1()
+			this.added_media = Array.from(manager.added_media_set)
+			const hashes = manager.getHashes()
+			for (let key in hashes) {
+				this.file_hashes[key] = hashes[key]
+			}
+			notice.hide()
+			new Notice("All done! Saving file hashes and added media now...")
+			await this.saveAllData()
+			new Notice("End of scan")
+		} catch (error) {
+			console.log('Obsidian to Anki Error:', error);
+			window.last_error = error;
+			console.log('Error saved in `window.last_error`');
+			notice.hide()
+			new Notice("Error, an error occured during sync ! Check console for error message.")
 		}
-		notice.hide()
-		new Notice("All done! Saving file hashes and added media now...")
-		await this.saveAllData()
-		new Notice("End of scan")
 	}
 
 	async onload() {

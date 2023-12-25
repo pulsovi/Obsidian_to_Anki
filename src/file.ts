@@ -319,7 +319,7 @@ export class AllFile extends AbstractFile {
             console.info('note match', note_match);
             let [note, position]: [string, number] = [note_match[1], note_match.index + note_match[0].indexOf(note_match[1]) + note_match[1].length]
             // That second thing essentially gets the index of the end of the first capture group.
-            let parsed = await new Note(
+            let parsed = await (new Note(
                 note,
                 this.data.fields_dict,
                 this.data.curly_cloze,
@@ -332,7 +332,7 @@ export class AllFile extends AbstractFile {
                 this.data,
                 this.data.add_context ? this.getContextAtIndex(note_match.index) : "",
                 file_manager
-            )
+            ))
             if (parsed.identifier == null) {
                 // Need to make sure global_tags get added
                 parsed.note.tags.push(...this.global_tags)

@@ -123,15 +123,18 @@ export class FormatConverter {
 		for (let embed of this.file_cache.embeds) {
 			if (note_text.includes(embed.original)) {
 				if (AUDIO_EXTS.includes(extname(embed.link))) {
+					/* embed audio file */
 					this.detectedMedia.add(embed.link)
 					note_text = note_text.replace(new RegExp(c.escapeRegex(embed.original), "g"), "[sound:" + basename(embed.link) + "]")
 				} else if (IMAGE_EXTS.includes(extname(embed.link))) {
+					/* embed image file */
 					this.detectedMedia.add(embed.link)
 					note_text = note_text.replace(
 						new RegExp(c.escapeRegex(embed.original), "g"),
 						'<img src="' + basename(embed.link) + '" alt="' + embed.displayText + '">'
 					)
 				} else if (!extname(embed.link) || extname(embed.link) === '.md') {
+					/* embed another note */
 					const link = MdParser.parseLink(embed.original)
 					const target = await file_manager.getFirstLinkpathDest(link.target, this.file_path)
 					const content = target ? new MdParser(target.file).getPortion(link.anchor) : null
@@ -148,6 +151,7 @@ export class FormatConverter {
 						`<blockquote class="embed"><a href="${href}" title="${title}"><h2 class="embed-title">${link_text}</h2></a>${quote_text}</blockquote>`
 					)
 				} else {
+					/* unknown embedding */
 					console.warn("Unsupported extension: ", extname(embed.link))
 				}
 			}
