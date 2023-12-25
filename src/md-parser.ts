@@ -22,6 +22,7 @@ export class MdParser {
     return { target, anchor, alias, title, start, end, isEmbed: Boolean(embed), original: rawLink }
   }
 
+  /** Retrieve a portion of a MD file given its anchor ref */
   public getPortion (ref?: string | undefined): string {
     const refs = parsePortionRef(ref)
     if (!refs) return this.content
@@ -66,8 +67,40 @@ export class MdParser {
   }
 }
 
-function parsePortionRef (ref?: string | undefined) {
+/**
+ * Parse a PortionRef string.
+ *
+ * with the link [[filename#heading one#subheading#next subheading]]
+ * the PortionRef is the filename stripped link : "#heading one#subheading#next subheading"
+ *
+ * @param ref PortionRef string
+ */
+function parsePortionRef (ref?: string | undefined): {
+  /** @see https://help.obsidian.md/Linking+notes+and+files/Internal+links */
+  type: 'heading' | 'block';
+
+  /**
+   * The first step of adressing inside ref
+   *
+   * ie: ref: "#heading one#subheading#next subheading" => id: "heading one"
+   */
+  id: string;
+
+  /**
+   * The next steps of adressing inside ref
+   *
+   * ie: ref: "#heading one#subheading#next subheading" => subref: "#subheading#next subheading"
+   */
+  subref: string;
+} {
   if (!ref) return null
+  if (ref.startsWith('#^')) {
+    return {
+      type: 'block',
+      id: ref.slice(2).replace(/[#|^].*$/u, ''),
+      subref: ref.slice(1).replace(/^[^#|^]*/u, '')
+    }
+  }
   if (ref.startsWith('#')) {
     const type = 'heading'
     const id = ref.slice(1).replace(/[#|^].*$/u, '')
