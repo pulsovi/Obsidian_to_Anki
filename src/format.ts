@@ -169,6 +169,7 @@ export class FormatConverter {
 			const displayText = this.getLinkDisplayText(link)
 			const href = this.getUrlFromLink(target, anchor)
 			const title = FormatConverter.the_title_attribute(link.title || decodeURIComponent(href))
+			console.log('format link', { link, displayText, href, title, cacheLink })
 			note_text = note_text.replace(
 				new RegExp(c.escapeRegex(original), "g"),
 				`<a href="${href}">${displayText}</a>`

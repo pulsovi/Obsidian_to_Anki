@@ -46,6 +46,11 @@ export class MdParser {
       if (!refs.subref) return portion
       return new MdParser(portion).getPortion(refs.subref)
     }
+
+    if (refs.type === 'block') {
+      return 'Obsidian_to_Anki cannot parse block links at this point. It\'s in <a href="obsidian://open?vault=Vaults&file=David%20Gabison%2FArchive%2FObsidian%20to%20Anki%20-%20RoadMap">the TODO list</a>'
+    }
+
     throw new Error(`Unable to manage such ref ${JSON.stringify(refs)}`)
   }
 
