@@ -173,7 +173,7 @@ export class Note extends AbstractNote {
       fields[key] = this.formatter
         .format(
           fields[key].trim(),
-          this.note_type.includes('Cloze') && this.curly_cloze,
+          this.note_type.toLowerCase().includes('cloze') && this.curly_cloze,
           this.highlights_to_cloze
         )
         .trim()
@@ -235,7 +235,7 @@ export class InlineNote extends AbstractNote {
       fields[key] = this.formatter
         .format(
           fields[key].trim(),
-          this.note_type.includes('Cloze') && this.curly_cloze,
+          this.note_type.toLowerCase().includes('cloze') && this.curly_cloze,
           this.highlights_to_cloze
         )
         .trim()
@@ -287,7 +287,7 @@ export class RegexNote {
       fields[key] = this.formatter
         .format(
           fields[key].trim(),
-          this.note_type.includes('Cloze') && this.curly_cloze,
+          this.note_type.toLowerCase().includes('cloze') && this.curly_cloze,
           this.highlights_to_cloze
         )
         .trim()
@@ -316,7 +316,7 @@ export class RegexNote {
       const context_field = data.context_fields[this.note_type]
       template['fields'][context_field] += context
     }
-    if (this.note_type.includes('Cloze') && !note_has_clozes(template)) {
+    if (this.note_type.toLowerCase().includes('cloze') && !note_has_clozes(template)) {
       this.identifier = CLOZE_ERROR //An error code that says "don't add this note!"
     }
     if (data.add_obs_tags) {
