@@ -226,6 +226,9 @@ export default class MyPlugin extends Plugin {
     this.saveAllData()
   }
 
+  /**
+   * Called when the plugin is loaded.
+   */
   async onload() {
     console.log('loading Obsidian_to_Anki...')
     addIcon('anki', ANKI_ICON)
@@ -267,6 +270,9 @@ export default class MyPlugin extends Plugin {
     })
   }
 
+  /**
+   * Called when the plugin is unloaded.
+   */
   async onunload() {
     console.log('Saving settings for Obsidian_to_Anki...')
     this.saveAllData()

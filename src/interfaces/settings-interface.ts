@@ -1,6 +1,12 @@
 import { FIELDS_DICT } from './field-interface'
 import { AnkiConnectNote } from './note-interface'
 
+/**
+ * Define the structure of the plugin settings.
+ * These settings are stored by Obsidian and persisted between sessions.
+ * Used primarily in SettingsTab for display/modification
+ * and in setting-to-data.ts for conversion to a format usable by the plugin.
+ */
 export interface PluginSettings {
   CUSTOM_REGEXPS: Record<string, string>
   FILE_LINK_FIELDS: Record<string, string>
@@ -32,6 +38,11 @@ export interface PluginSettings {
   IGNORED_FILE_GLOBS: string[]
 }
 
+/**
+ * Define the structure of the file data.
+ * This interface is used as a base for note processing and communication with Anki.
+ * It is primarily used in the note formatter and file manager.
+ */
 export interface FileData {
   //All the data that a file would need.
   fields_dict: FIELDS_DICT
@@ -54,8 +65,16 @@ export interface FileData {
   comment: boolean
   add_context: boolean
   add_obs_tags: boolean
+
+  /** Whether to convert Markdown to HTML when filling in the Note field. */
+  markdown_format: boolean
 }
 
+/**
+ * Extension of FileData with additional properties specific to the parameters.
+ * Used as the return type of the settingToData() function to provide
+ * a unified interface for the rest of the application.
+ */
 export interface ParsedSettings extends FileData {
   add_file_link: boolean
   folder_decks: Record<string, string>

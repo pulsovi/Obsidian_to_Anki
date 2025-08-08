@@ -4,6 +4,17 @@ import * as AnkiConnect from './anki'
 import { ID_REGEXP_STR } from './note'
 import { escapeRegex } from './constants'
 
+/**
+ * Converts raw plugin settings to a format usable by the rest of the application.
+ *
+ * This function is the main entry point for parameter transformation.
+ * It is called when the plugin is initialized and whenever parameters are modified.
+ *
+ * @param app - The Obsidian App instance
+ * @param settings - The raw plugin settings (interface PluginSettings)
+ * @param fields_dict - Dictionary of available fields per note type
+ * @returns A Promise resolved with the transformed parameters (interface ParsedSettings)
+ */
 export async function settingToData(
   app: App,
   settings: PluginSettings,
@@ -70,6 +81,8 @@ export async function settingToData(
   result.add_context = settings.Defaults['Add Context']
   result.add_obs_tags = settings.Defaults['Add Obsidian Tags']
   result.ignored_file_globs = settings.IGNORED_FILE_GLOBS ?? []
+
+  result.markdown_format = settings.Defaults['Markdown Formatting']
 
   return result
 }

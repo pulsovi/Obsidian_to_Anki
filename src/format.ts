@@ -45,11 +45,13 @@ function escapeHtml(unsafe: string): string {
 export class FormatConverter {
   file_cache: CachedMetadata
   vault_name: string
+  markdown_format: boolean
   detectedMedia: Set<string>
 
-  constructor(file_cache: CachedMetadata, vault_name: string) {
+  constructor(file_cache: CachedMetadata, vault_name: string, markdown_format: boolean) {
     this.vault_name = vault_name
     this.file_cache = file_cache
+    this.markdown_format = markdown_format
     this.detectedMedia = new Set()
   }
 
@@ -182,7 +184,9 @@ export class FormatConverter {
     note_text = note_text.replace(HIGHLIGHT_REGEXP, String.raw`<mark>$1</mark>`)
     note_text = this.decensor(note_text, DISPLAY_CODE_REPLACE, display_code_matches, false)
     note_text = this.decensor(note_text, INLINE_CODE_REPLACE, inline_code_matches, false)
-    note_text = converter.makeHtml(note_text)
+
+    if (this.markdown_format) note_text = converter.makeHtml(note_text)
+
     note_text = this.decensor(note_text, MATH_REPLACE, math_matches, true).trim()
     // Remove unnecessary paragraph tag
     if (note_text.startsWith(PARA_OPEN) && note_text.endsWith(PARA_CLOSE)) {

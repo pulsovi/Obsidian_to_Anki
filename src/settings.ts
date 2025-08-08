@@ -18,11 +18,30 @@ const defaultDescs = {
   'ID Comments': 'Wrap note IDs in a HTML comment.',
   'Add Obsidian Tags':
     'Interpret #tags in the fields of a note as Anki tags, removing them from the note text in Anki.',
+  'Markdown Formatting': 'Automatically convert Markdown to HTML when filling in the Note field.',
 }
 
 export const DEFAULT_IGNORED_FILE_GLOBS = ['**/*.excalidraw.md']
 
+/**
+ * Main class handling the user interface of the plugin settings.
+ * Inherits from PluginSettingTab of Obsidian to integrate into the application preferences.
+ *
+ * Responsibilities:
+ * - Display the settings interface
+ * - Handle user interactions
+ * - Save parameter modifications
+ * - Provide a user-friendly interface for configuring the plugin
+ */
 export class SettingsTab extends PluginSettingTab {
+  /**
+   * Configure the custom regular expression field for a specific note type.
+   * @param note_type - The Anki note type concerned
+   * @param row_cells - Collection of HTML cells of the table row
+   *
+   * This method is called by setup_note_table() for each note type.
+   * It allows the user to define custom regex for each note type.
+   */
   setup_custom_regexp(note_type: string, row_cells: HTMLCollection) {
     const plugin = (this as any).plugin
     let regexp_section = plugin.settings['CUSTOM_REGEXPS']
@@ -39,6 +58,14 @@ export class SettingsTab extends PluginSettingTab {
     custom_regexp.controlEl.className += ' anki-center'
   }
 
+  /**
+   * Configure the dropdown menu to select the file link field.
+   * @param note_type - The Anki note type concerned
+   * @param row_cells - Collection of HTML cells of the table row
+   *
+   * This method dynamically retrieves the available fields from Anki
+   * and allows the user to select the field that will contain the link to the source file.
+   */
   setup_link_field(note_type: string, row_cells: HTMLCollection) {
     const plugin = (this as any).plugin
     let link_fields_section = plugin.settings.FILE_LINK_FIELDS
@@ -75,6 +102,14 @@ export class SettingsTab extends PluginSettingTab {
     link_field.controlEl.className += ' anki-center'
   }
 
+  /**
+   * Configure the dropdown menu to select the context field.
+   * @param note_type - The Anki note type concerned
+   * @param row_cells - Collection of HTML cells of the table row
+   *
+   * This method dynamically retrieves the available fields from Anki
+   * and allows the user to select the field that will contain the context.
+   */
   setup_context_field(note_type: string, row_cells: HTMLCollection) {
     const plugin = (this as any).plugin
     let context_fields_section: Record<string, string> = plugin.settings.CONTEXT_FIELDS
@@ -117,6 +152,13 @@ export class SettingsTab extends PluginSettingTab {
     })
   }
 
+  /**
+   * Configure the note type table.
+   * Creates an interactive table allowing to configure specific parameters
+   * for each detected Anki note type.
+   *
+   * Called by setup_display() when loading the settings tab.
+   */
   setup_note_table() {
     let { containerEl } = this
     const plugin = (this as any).plugin
@@ -165,6 +207,13 @@ export class SettingsTab extends PluginSettingTab {
     }
   }
 
+  /**
+   * Configure the default settings of the plugin.
+   * Also initializes default values for new parameters
+   * during plugin updates.
+   *
+   * Called by setup_display() when loading the settings tab.
+   */
   setup_defaults() {
     let { containerEl } = this
     const plugin = (this as any).plugin
@@ -189,6 +238,10 @@ export class SettingsTab extends PluginSettingTab {
     // To account for new add obsidian tags
     if (!plugin.settings['Defaults'].hasOwnProperty('Add Obsidian Tags')) {
       plugin.settings['Defaults']['Add Obsidian Tags'] = false
+    }
+    // To account for new markdown formatting
+    if (!plugin.settings['Defaults'].hasOwnProperty('Markdown Formatting')) {
+      plugin.settings['Defaults']['Markdown Formatting'] = true
     }
     for (let key of Object.keys(plugin.settings['Defaults'])) {
       // To account for removal of regex setting
@@ -289,6 +342,13 @@ export class SettingsTab extends PluginSettingTab {
     folder_tag.controlEl.className += ' anki-center'
   }
 
+  /**
+   * Configure the folder table.
+   * Allows to define specific decks and tags for each folder of the vault.
+   *
+   * Called by setup_display() and uses get_folders()
+   * to list the folders of the vault.
+   */
   setup_folder_table() {
     let { containerEl } = this
     const plugin = (this as any).plugin
@@ -435,6 +495,13 @@ export class SettingsTab extends PluginSettingTab {
       })
   }
 
+  /**
+   * Main method for initializing the settings interface.
+   * Automatically called by Obsidian when opening the tab.
+   *
+   * Organizes the interface into logical sections and delegates configuration
+   * to specialized methods.
+   */
   setup_display() {
     let { containerEl } = this
 
